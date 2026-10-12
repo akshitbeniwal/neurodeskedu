@@ -59,11 +59,6 @@ on:
         required: false
         type: boolean
         default: false
-      force_deploy_pages:
-        description: 'Force deploy pages'
-        required: false
-        type: boolean
-        default: false
       notebook_selector:
         description: 'Path relative to books/ (e.g. examples/functional_imaging/intro_to_preprocessing.ipynb)'
         required: false
@@ -234,7 +229,7 @@ jobs:
 
       # --- Pip Cache Warmer ---
       - name: Cache Conda/Python dependencies
-        uses: actions/cache@v5.0.1
+        uses: actions/cache@v5.1.0
         with:
           path: ${{ github.workspace }}/.cache/pip
           key: pip-book-${{ hashFiles('requirements-book.txt', 'books/myst.yml', 'books/publishing.yml') }}
@@ -1766,7 +1761,7 @@ jobs:
 
 
       - name: Restore Conda/Python dependencies cache
-        uses: actions/cache@v5.0.1
+        uses: actions/cache@v5.1.0
         with:
           path: ${{ github.workspace }}/.cache/pip
           key: pip-book-${{ hashFiles('requirements-book.txt', 'books/myst.yml', 'books/publishing.yml') }}
@@ -2037,9 +2032,19 @@ jobs:
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
-        if: (github.ref == 'refs/heads/main' || inputs.force_deploy_pages == true) && inputs.diagnostic_mode != true
+        if: github.ref == 'refs/heads/main' && inputs.diagnostic_mode != true
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./books/_build/html
           keep_files: false  # Clean publish - removes old/broken notebooks
           force_orphan: true  # Reset gh-pages history on each deploy to prevent size bloat
+
+      - name: Deploy staging to neurodesk/edu
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
+        if: github.ref == 'refs/heads/main' && inputs.diagnostic_mode != true
+        with:
+          deploy_key: ${{ secrets.EDU_DEPLOY_KEY }}
+          external_repository: neurodesk/edu
+          publish_branch: gh-pages
+          publish_dir: ./books/_build/html
+          force_orphan: true
